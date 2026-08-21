@@ -11,7 +11,7 @@ app.get("/", (req, res) => {
   res.send("Server is up and running");
 });
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = process.env.MONGODB_URI;
 
 const client = new MongoClient(uri, {
@@ -63,13 +63,25 @@ async function run() {
        const cursor = doctorsCollection.find(query);
        const result = await cursor.toArray();
        res.send(result);
-     } catch (error) {
-       console.error(error);
+     } catch (err) {
+       console.error(err);
        res.status(500).send({ error: "Failed to fetch doctors" });
      }
    });
 
-
+   app.get("/api/doctors/:id", async(req,res) => {
+       
+       try{
+            const {id} = req.params;
+            const cursor = {_id: new ObjectId(id)};
+            const result = await doctorsCollection.findOne(cursor);
+            res.send(result);
+        }
+        catch(err){
+            console.error(err);
+            res.status(500).send({ error: "Failed to fetch doctor by id" });
+        }
+   })
 
   } 
   catch (error) {
