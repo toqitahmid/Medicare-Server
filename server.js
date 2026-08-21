@@ -29,6 +29,7 @@ async function run() {
     await client.connect();
     const database = client.db("medicare_db");
     const doctorsCollection = database.collection("doctors");
+    const patientCollection = database.collection("patients");
 
    app.get("/api/doctors", async (req, res) => {
      try {
@@ -82,6 +83,21 @@ async function run() {
             res.status(500).send({ error: "Failed to fetch doctor by id" });
         }
    })
+
+   app.get("/api/patients/:id", async (req, res) => {
+   try {
+     const { id } = req.params;
+     const query = { userId: id};
+     const result = await patientCollection.findOne(query);
+     if (!result) {
+       return res.status(404).send({ error: "patient not found" });
+     }
+     res.send(result);
+   } catch (err) {
+     console.error(err);
+     res.status(500).send({ error: "failed to fetch patient by id" });
+   }
+   });
 
   } 
   catch (error) {
