@@ -31,6 +31,7 @@ async function run() {
     const doctorsCollection = database.collection("doctors");
     const patientCollection = database.collection("patients");
     const appointmentCollection = database.collection("appointments")
+    const planCollection = database.collection("plans")
 
    app.get("/api/doctors", async (req, res) => {
      try {
@@ -48,13 +49,13 @@ async function run() {
        const numericFilters = [];
        if(maxFee){
         numericFilters.push({
-            $lte: [{$toDouble: "consultationFee"}, Number(maxFee)],
+            $lte: [{$toDouble: "$consultationFee"}, Number(maxFee)],
         })
        }
 
        if(minExperience){
         numericFilters.push({
-            $gte: [{$toDouble: "experience"}, Number(minExperience)]
+            $gte: [{$toDouble: "$experience"}, Number(minExperience)]
         });
        }
 
@@ -113,6 +114,7 @@ async function run() {
     }
 
    })
+
    app.post("/api/appointments", async(req,res) => {
     try{
       const appointment = req.body;
@@ -127,6 +129,21 @@ async function run() {
     catch(err){
       console.err("error: ", err);
       res.status(500).send({massege: "Failed to create appointment"})
+    }
+   })
+
+   app.get("/api/plans", async(req,res) => {
+    try{
+      const query = {};
+      if(req.query.planId){
+        query.plan_id = req.query.planId;
+      }
+      const result = await planCollection.findOne(query);
+      res.send(result);
+    }
+    catch(err){
+      console.error(err);
+      res.status(500).send({message: "Failed to get plan"})
     }
    })
 
