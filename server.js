@@ -30,6 +30,7 @@ async function run() {
     const database = client.db("medicare_db");
     const doctorsCollection = database.collection("doctors");
     const patientCollection = database.collection("patients");
+    const appointmentCollection = database.collection("appointments")
 
    app.get("/api/doctors", async (req, res) => {
      try {
@@ -98,6 +99,36 @@ async function run() {
      res.status(500).send({ error: "failed to fetch patient by id" });
    }
    });
+
+   app.get("/api/appointments/:id", async(req,res) => {
+    
+    try{
+      const {id} = req.params;
+      const query = {_id : new ObjectId(id)};
+      const result = await appointmentCollection.find(query).toArray();
+      res.send(result);
+    }
+    catch(err){
+      console.error(err);
+    }
+
+   })
+   app.post("/api/appointments", async(req,res) => {
+    try{
+      const appointment = req.body;
+      const appointmentData = {
+        ...appointment,
+        createAt: new Date(),
+      }
+
+      const result = await appointmentCollection.insertOne(appointmentData);
+      res.send(result);
+    }
+    catch(err){
+      console.err("error: ", err);
+      res.status(500).send({massege: "Failed to create appointment"})
+    }
+   })
 
   } 
   catch (error) {
