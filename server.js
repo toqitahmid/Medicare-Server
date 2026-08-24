@@ -105,7 +105,7 @@ async function run() {
     
     try{
       const {id} = req.params;
-      const query = {_id : new ObjectId(id)};
+      const query = {patientId: id};
       const result = await appointmentCollection.find(query).toArray();
       res.send(result);
     }
