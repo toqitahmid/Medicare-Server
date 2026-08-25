@@ -32,6 +32,7 @@ async function run() {
     const patientCollection = database.collection("patients");
     const appointmentCollection = database.collection("appointments")
     const planCollection = database.collection("plans")
+    const paymentCollection = database.collection("payments");
 
    app.get("/api/doctors", async (req, res) => {
      try {
@@ -145,6 +146,30 @@ async function run() {
       console.error(err);
       res.status(500).send({message: "Failed to get plan"})
     }
+   })
+
+   app.post("/api/payments", async(req,res) => {
+      try{
+        const data = req.body;
+        const paymentInfo = {
+          ...data,
+          createdAt: new Date(),
+        }
+        const result = await paymentCollection.insertOne(paymentInfo);
+
+        const filter = {_id: new ObjectId(data.patientId)};
+        const updateDoc = {
+          $set: {
+            plan: data.planId,
+          }
+        }
+        const updateResult = await patientCollection.updateOne(filter, updateDoc);
+        res.send({updateResult,result});
+      }
+      catch(err){
+        console.error('error : ', err);
+        res.status(500).send({massege: "Failed to post paymentInfo"});
+      }
    })
 
   } 
