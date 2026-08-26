@@ -137,7 +137,7 @@ async function run() {
     try{
       const query = {};
       if(req.query.planId){
-        query.plan_id = req.query.planId;
+        query.id = req.query.planId;
       }
       const result = await planCollection.findOne(query);
       res.send(result);
@@ -169,6 +169,20 @@ async function run() {
       catch(err){
         console.error('error : ', err);
         res.status(500).send({massege: "Failed to post paymentInfo"});
+      }
+   })
+
+   app.get("/api/payments/:id", async(req,res) => {
+      try{const {id} = req.params;
+      const query = {patientId: id};
+
+      const result = await paymentCollection.find(query).toArray();
+
+      res.send(result);}
+
+      catch(err){
+        console.error(err);
+        res.status(500).send({massege: "failed to get payments"})
       }
    })
 
