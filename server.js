@@ -352,6 +352,27 @@ async function run() {
         res.status(500).send({ message: "Failed to create prescription" });
       }
     });
+
+    app.get("/api/prescriptions/doctors/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+
+
+        const prescription = await prescriptionCollection.find({
+          doctorId: id,
+        }).toArray();
+
+        if (!prescription) {
+          return res.status(404).send({ message: "Prescription not found" });
+        }
+
+        res.send(prescription);
+      } catch (err) {
+        console.error("Error fetching prescription: ", err);
+        res.status(500).send({ message: "Failed to fetch prescription" });
+      }
+    });
+    
   } 
   catch (error) {
     console.log(error);
