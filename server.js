@@ -34,6 +34,9 @@ async function run() {
     const planCollection = database.collection("plans")
     const paymentCollection = database.collection("payments");
 
+
+
+  // ----------- doctors api --------------
    app.get("/api/doctors", async (req, res) => {
      try {
         
@@ -87,6 +90,95 @@ async function run() {
         }
    })
 
+   app.get("/api/doctors/appointments/:id", async (req, res) => {
+     try {
+       const { id } = req.params;
+       const query = { doctorId: id };
+       const result = await appointmentCollection.find(query).toArray();
+       res.send(result);
+     } catch (err) {
+       console.error(err);
+     }
+   });
+
+   app.get("/api/doctors/user/:id", async (req, res) => {
+     try {
+       const { id } = req.params;
+       const query = { userId: id };
+       const result = await doctorsCollection.findOne(query);
+       if (!result) {
+         return res.status(404).send({ error: "doctor not found" });
+       }
+       res.send(result);
+     } catch (err) {
+       console.error(err);
+       res.status(500).send({ error: "failed to fetch doctor by user id" });
+     }
+   });
+   
+
+   app.get("/api/doctors/appointments/today/:id", async (req, res) => {
+     try {
+       const { id } = req.params;
+        const today = new Date().toLocaleDateString("en-CA");
+
+        const query = { doctorId: id, appointmentDate: today };
+       const result = await appointmentCollection.find(query).toArray();
+       res.send(result);
+     } catch (err) {
+       console.error(err);
+     }
+   });
+
+   app.patch("/api/doctors/update_schedule/:id", async (req, res) => {
+     try {
+       const { id } = req.params;
+       const { availableDays, availableSlots } = req.body;
+
+       if (!availableDays || !availableSlots) {
+         return res.status(400).json({
+           success: false,
+           message: "Both availableDays and availableSlots are required.",
+         });
+       }
+
+       const formattedDays = Array.isArray(availableDays)
+         ? availableDays.join(", ")
+         : availableDays;
+
+       const query = { _id: new ObjectId(id) };
+       const updateDoc = {
+         $set: {
+           availableDays: formattedDays,
+           availableSlots: availableSlots,
+         },
+       };
+
+       const result = await doctorsCollection.updateOne(query, updateDoc);
+
+       if (result.matchedCount === 0) {
+         return res.status(404).json({
+           success: false,
+           message: "Doctor not found.",
+         });
+       }
+
+       res.status(200).json({
+         success: true,
+         message: "Schedule updated successfully.",
+       });
+     } catch (error) {
+       console.error("Error updating schedule:", error);
+       res.status(500).json({
+         success: false,
+         message: "Internal server error.",
+         error: error.message,
+       });
+     }
+   });
+
+
+  // ----------- patients api --------------
    app.get("/api/patients/:id", async (req, res) => {
    try {
      const { id } = req.params;
@@ -101,7 +193,7 @@ async function run() {
      res.status(500).send({ error: "failed to fetch patient by id" });
    }
    });
-
+  
    app.get("/api/appointments/:id", async(req,res) => {
     
     try{
@@ -133,6 +225,8 @@ async function run() {
     }
    })
 
+
+  // -------------- plans api ---------------
    app.get("/api/plans", async(req,res) => {
     try{
       const query = {};
@@ -147,7 +241,9 @@ async function run() {
       res.status(500).send({message: "Failed to get plan"})
     }
    })
+  
 
+  // ------------- payments api -------------
    app.post("/api/payments", async(req,res) => {
       try{
         const data = req.body;
