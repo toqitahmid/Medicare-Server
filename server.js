@@ -107,6 +107,43 @@ async function run() {
       }
     });
 
+    app.patch("/api/admin/patients/:patientId", async (req, res) => {
+      try {
+        const { patientId } = req.params;
+        const { verificationStatus } = req.body;
+
+        if (!verificationStatus) {
+          return res
+            .status(400)
+            .json({ message: "verificationStatus is required." });
+        }
+
+        if (!ObjectId.isValid(patientId)) {
+          return res.status(400).json({ message: "Invalid patientId." });
+        }
+
+        const result = await patientCollection.findOneAndUpdate(
+          { _id: new ObjectId(patientId) },
+          { $set: { verificationStatus } },
+          { returnDocument: "after" }, // v3.x driver: use { returnOriginal: false }
+        );
+
+        const updatedPatient = result?.value ?? result;
+
+        if (!updatedPatient) {
+          return res.status(404).json({ message: "Patient not found." });
+        }
+
+        return res.status(200).json({
+          message: "Patient status updated successfully",
+          patient: updatedPatient,
+        });
+      } catch (error) {
+        console.error("Error updating status:", error);
+        return res.status(500).json({ message: "Internal server error" });
+      }
+    });
+
     // ----------- doctors api --------------
     app.get("/api/doctors", async (req, res) => {
       try {
@@ -244,45 +281,41 @@ async function run() {
       }
     });
 
-    app.patch("/api/appointments/update/:id", async (req, res) => {
+    app.patch("/api/admin/patients/:patientId", async (req, res) => {
       try {
-        const { id } = req.params;
-        const { appointmentStatus } = req.body;
+        const { patientId } = req.params;
+        const { verificationStatus } = req.body;
 
-        if (!appointmentStatus) {
-          return res.status(400).send({
-            success: false,
-            message: "appointmentStatus is required.",
-          });
+        if (!verificationStatus) {
+          return res
+            .status(400)
+            .json({ message: "verificationStatus is required." });
         }
 
-        const filter = { _id: new ObjectId(id) };
-        const updateDoc = {
-          $set: {
-            appointmentStatus: appointmentStatus,
-          },
-        };
-
-        const result = await appointmentCollection.updateOne(filter, updateDoc);
-
-        if (result.matchedCount === 0) {
-          return res.status(404).send({
-            success: false,
-            message: "Appointment not found.",
-          });
+        if (!ObjectId.isValid(patientId)) {
+          return res.status(400).json({ message: "Invalid patientId." });
         }
 
-        res.send({
-          success: true,
-          message: `Appointment status updated to ${appointmentStatus}`,
-          result,
+        const result = await patientCollection.findOneAndUpdate(
+          { _id: new ObjectId(patientId) },
+          { $set: { verificationStatus } },
+          { returnDocument: "after" }, // driver v4+; use { returnOriginal: false } on older versions
+        );
+
+        // Some driver versions return the doc directly, others wrap it as { value: doc }
+        const updatedPatient = result?.value ?? result;
+
+        if (!updatedPatient) {
+          return res.status(404).json({ message: "Patient not found." });
+        }
+
+        return res.status(200).json({
+          message: "Patient status updated successfully",
+          patient: updatedPatient,
         });
-      } catch (err) {
-        console.error("Error updating appointment status:", err);
-        res.status(500).send({
-          success: false,
-          message: "Failed to update appointment status",
-        });
+      } catch (error) {
+        console.error("Error updating status:", error);
+        return res.status(500).json({ message: "Internal server error" });
       }
     });
 
