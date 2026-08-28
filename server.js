@@ -144,6 +144,43 @@ async function run() {
       }
     });
 
+    app.patch("/api/admin/doctors/:doctorId", async (req, res) => {
+      try {
+        const { doctorId } = req.params;
+        const { verificationStatus } = req.body;
+
+        if (!verificationStatus) {
+          return res
+            .status(400)
+            .json({ message: "verificationStatus is required." });
+        }
+
+        if (!ObjectId.isValid(doctorId)) {
+          return res.status(400).json({ message: "Invalid patientId." });
+        }
+
+        const result = await doctorsCollection.findOneAndUpdate(
+          { _id: new ObjectId(doctorId) },
+          { $set: { verificationStatus } },
+          { returnDocument: "after" }, // v3.x driver: use { returnOriginal: false }
+        );
+
+        const updatedDoctor = result?.value ?? result;
+
+        if (!updatedDoctor) {
+          return res.status(404).json({ message: "Patient not found." });
+        }
+
+        return res.status(200).json({
+          message: "Patient status updated successfully",
+          patient: updatedDoctor,
+        });
+      } catch (error) {
+        console.error("Error updating status:", error);
+        return res.status(500).json({ message: "Internal server error" });
+      }
+    });
+
     // ----------- doctors api --------------
     app.get("/api/doctors", async (req, res) => {
       try {
