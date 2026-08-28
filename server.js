@@ -28,12 +28,84 @@ async function run() {
   try {
     await client.connect();
     const database = client.db("medicare_db");
+    const usersCollection = database.collection("user");
     const doctorsCollection = database.collection("doctors");
     const patientCollection = database.collection("patients");
     const appointmentCollection = database.collection("appointments");
     const planCollection = database.collection("plans");
     const paymentCollection = database.collection("payments");
-    const prescriptionCollection = database.collection("precriptions")
+    const prescriptionCollection = database.collection("precriptions");
+    const reviewCollection = database.collection("reviews");
+
+    // ----------- admin's api -------------
+    // Put these FIRST
+    app.get("/api/admin/users", async (req, res) => {
+      try {
+        const result = await usersCollection.find().toArray();
+        res.status(200).send(result);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "failed to fetch users" });
+      }
+    });
+
+    app.get("/api/admin/doctors", async (req, res) => {
+      try {
+        const result = await doctorsCollection.find().toArray();
+        res.send(result);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "failed to fetch doctors" });
+      }
+    });
+
+    app.get("/api/admin/patients", async (req, res) => {
+      try {
+        const result = await patientCollection.find().toArray();
+        res.status(200).send(result);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "failed to fetch patients" });
+      }
+    });
+
+    app.get("/api/admin/appointments", async (req, res) => {
+      try {
+        const result = await appointmentCollection.find().toArray();
+        res.status(200).send(result);
+      } catch (err) {
+        res.status(500).send({ message: "failed to fetch appointments" });
+      }
+    });
+
+    app.get("/api/admin/reviews", async (req, res) => {
+      try {
+        const result = await reviewCollection.find().toArray();
+        res.status(200).send(result);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "failed to fetch reviews" });
+      }
+    });
+
+    // This MUST come LAST among /api/admin/* routes
+    app.get("/api/admin/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        if (!ObjectId.isValid(id)) {
+          return res.status(400).send({ message: "Invalid ID" });
+        }
+        const query = { _id: new ObjectId(id) };
+        const result = await usersCollection.findOne(query);
+        if (!result) {
+          return res.status(404).send({ message: "User not found" });
+        }
+        res.status(200).send(result);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "Failed to fetch admin data" });
+      }
+    });
 
     // ----------- doctors api --------------
     app.get("/api/doctors", async (req, res) => {
@@ -313,7 +385,6 @@ async function run() {
       }
     });
 
-
     // ------------- prescription api ------------
     app.post("/api/prescriptions", async (req, res) => {
       try {
@@ -328,11 +399,9 @@ async function run() {
 
         // Validate required fields
         if (!doctorId || !patientId || !appointmentId) {
-          return res
-            .status(400)
-            .send({
-              message: "Missing required appointment, doctor, or patient ID",
-            });
+          return res.status(400).send({
+            message: "Missing required appointment, doctor, or patient ID",
+          });
         }
 
         const prescriptionData = {
@@ -357,10 +426,11 @@ async function run() {
       try {
         const { id } = req.params;
 
-
-        const prescription = await prescriptionCollection.find({
-          doctorId: id,
-        }).toArray();
+        const prescription = await prescriptionCollection
+          .find({
+            doctorId: id,
+          })
+          .toArray();
 
         if (!prescription) {
           return res.status(404).send({ message: "Prescription not found" });
@@ -372,7 +442,79 @@ async function run() {
         res.status(500).send({ message: "Failed to fetch prescription" });
       }
     });
-    
+    app.get("/api/prescriptions/patients/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+
+        const prescription = await prescriptionCollection
+          .find({
+            doctorId: id,
+          })
+          .toArray();
+
+        if (!prescription) {
+          return res.status(404).send({ message: "Prescription not found" });
+        }
+
+        res.send(prescription);
+      } catch (err) {
+        console.error("Error fetching prescription: ", err);
+        res.status(500).send({ message: "Failed to fetch prescription" });
+      }
+    });
+
+    // ------------- review api ----------------
+    app.post("/api/reviews", async (req, res) => {
+      try {
+        const {
+          appointmentId,
+          patientId,
+          patientName,
+          doctorId,
+          doctorName,
+          rating,
+          reviewText,
+        } = req.body;
+
+        // Validate required fields
+        if (!appointmentId || !doctorId || !rating || !reviewText) {
+          return res.status(400).send({
+            message: "Missing required fields for review submission",
+          });
+        }
+
+        const reviewData = {
+          appointmentId,
+          patientId,
+          patientName: patientName || "Anonymous Patient",
+          doctorId,
+          doctorName: doctorName || "",
+          rating: Number(rating),
+          reviewText: reviewText.trim(),
+          createdAt: new Date(),
+        };
+
+        const result = await reviewCollection.insertOne(reviewData);
+        res.status(201).send(result);
+      } catch (err) {
+        console.error("error: ", err);
+        res.status(500).send({ message: "Failed to submit review" });
+      }
+    });
+
+    app.get("/api/reviews/patient/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const query = { patientId: id };
+
+        const result = await reviewCollection.find(query).toArray();
+
+        res.send(result);
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ message: "failed to get patient reviews" });
+      }
+    });
   } 
   catch (error) {
     console.log(error);
