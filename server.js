@@ -431,7 +431,7 @@ async function run() {
     });
 
     // ----------- patients api --------------
-    app.get("/api/patients/:id", async (req, res) => {
+    app.get("/api/patients/:id", verifyToken, async (req, res) => {
       try {
         const { id } = req.params;
         const query = { userId: id };
@@ -446,7 +446,7 @@ async function run() {
       }
     });
 
-    app.get("/api/appointments/:id", async (req, res) => {
+    app.get("/api/appointments/:id", verifyToken, async (req, res) => {
       try {
         const { id } = req.params;
         const query = { patientId: id };
@@ -457,7 +457,7 @@ async function run() {
       }
     });
 
-    app.post("/api/appointments", async (req, res) => {
+    app.post("/api/appointments", verifyToken, async (req, res) => {
       try {
         const appointment = req.body;
         const appointmentData = {
@@ -474,7 +474,7 @@ async function run() {
     });
 
     // -------------- plans api ---------------
-    app.get("/api/plans", async (req, res) => {
+    app.get("/api/plans", verifyToken, async (req, res) => {
       try {
         const query = {};
         if (req.query.planId) {
@@ -489,7 +489,7 @@ async function run() {
     });
 
     // ------------- payments api -------------
-    app.post("/api/payments", async (req, res) => {
+    app.post("/api/payments", verifyToken, async (req, res) => {
       try {
         const data = req.body;
         const paymentInfo = {
@@ -515,7 +515,7 @@ async function run() {
       }
     });
 
-    app.get("/api/payments/:id", async (req, res) => {
+    app.get("/api/payments/:id", verifyToken, verifyPatient, async (req, res) => {
       try {
         const { id } = req.params;
         const query = { patientId: id };
@@ -530,7 +530,7 @@ async function run() {
     });
 
     // ------------- prescription api ------------
-    app.post("/api/prescriptions", async (req, res) => {
+    app.post("/api/prescriptions", verifyToken, async (req, res) => {
       try {
         const {
           doctorId,
@@ -566,7 +566,7 @@ async function run() {
       }
     });
 
-    app.get("/api/prescriptions/doctors/:id", async (req, res) => {
+    app.get("/api/prescriptions/doctors/:id", verifyToken, verifyDoctor,  async (req, res) => {
       try {
         const { id } = req.params;
 
@@ -586,7 +586,7 @@ async function run() {
         res.status(500).send({ message: "Failed to fetch prescription" });
       }
     });
-    app.get("/api/prescriptions/patients/:id", async (req, res) => {
+    app.get("/api/prescriptions/patients/:id", verifyToken, verifyPatient,  async (req, res) => {
       try {
         const { id } = req.params;
 
@@ -608,7 +608,7 @@ async function run() {
     });
 
     // ------------- review api ----------------
-    app.post("/api/reviews", async (req, res) => {
+    app.post("/api/reviews", verifyToken, verifyPatient, async (req, res) => {
       try {
         const {
           appointmentId,
@@ -646,7 +646,7 @@ async function run() {
       }
     });
 
-    app.get("/api/reviews/patient/:id", async (req, res) => {
+    app.get("/api/reviews/patient/:id", verifyToken, async (req, res) => {
       try {
         const { id } = req.params;
         const query = { patientId: id };
