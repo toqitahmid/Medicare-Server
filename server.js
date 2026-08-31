@@ -40,7 +40,7 @@ async function run() {
     const reviewCollection = database.collection("reviews");
     const sessionCollection = database.collection("session");
 
-    const verifyToken = async(req, res, next) => {
+    const verifyToken = async (req, res, next) => {
       console.log("headers", req.headers);
 
       const authHeader = req.headers.authorization;
@@ -53,37 +53,37 @@ async function run() {
         return res.status(401).send({ message: "unauthorized access" });
       }
 
-      const query = {token: token}
+      const query = { token: token };
       const session = await sessionCollection.findOne(query);
       const userId = session.userId;
-      const userQuery = {_id: userId};
+      const userQuery = { _id: userId };
       const user = await usersCollection.findOne(userQuery);
       req.user = user;
       next();
     };
 
-    const verifyAdmin = async(req,res,next) => {
-      if(req.user?.role !== 'admin'){
-        return res.status(403).send({message: "forbidden access"})
+    const verifyAdmin = async (req, res, next) => {
+      if (req.user?.role !== "admin") {
+        return res.status(403).send({ message: "forbidden access" });
       }
       next();
-    }
-    const verifyDoctor = async(req,res,next) => {
-      if(req.user?.role !== 'doctor'){
-        return res.status(403).send({message: "forbidden access"})
+    };
+    const verifyDoctor = async (req, res, next) => {
+      if (req.user?.role !== "doctor") {
+        return res.status(403).send({ message: "forbidden access" });
       }
       next();
-    }
-    const verifyPatient = async(req,res,next) => {
-      if(req.user?.role !== 'patient'){
-        return res.status(403).send({message: "forbidden access"})
+    };
+    const verifyPatient = async (req, res, next) => {
+      if (req.user?.role !== "patient") {
+        return res.status(403).send({ message: "forbidden access" });
       }
       next();
-    }
+    };
 
     // ----------- admin's api -------------
     // Put these FIRST
-    app.get("/api/admin/users",verifyToken, verifyAdmin, async (req, res) => {
+    app.get("/api/admin/users", verifyToken, verifyAdmin, async (req, res) => {
       try {
         const result = await usersCollection.find().toArray();
         res.status(200).send(result);
@@ -255,6 +255,53 @@ async function run() {
       },
     );
 
+    // ----------- update appointment status ------------
+    app.patch(
+      "/api/appointments/update/:id",
+      verifyToken,
+      verifyDoctor,
+      async (req, res) => {
+        try {
+          const { id } = req.params;
+          const { appointmentStatus } = req.body;
+
+          if (!appointmentStatus) {
+            return res
+              .status(400)
+              .json({ message: "appointmentStatus is required." });
+          }
+
+          if (!ObjectId.isValid(id)) {
+            return res
+              .status(400)
+              .json({ message: "Invalid appointment ID format." });
+          }
+
+          const filter = { _id: new ObjectId(id) };
+          const updateDoc = {
+            $set: { appointmentStatus },
+          };
+
+          const result = await appointmentCollection.updateOne(
+            filter,
+            updateDoc,
+          );
+
+          if (result.matchedCount === 0) {
+            return res.status(404).json({ message: "Appointment not found." });
+          }
+
+          res.status(200).json({
+            message: "Appointment status updated successfully.",
+            result,
+          });
+        } catch (error) {
+          console.error("Error updating appointment status:", error);
+          res.status(500).json({ message: "Internal server error." });
+        }
+      },
+    );
+
     // ----------- doctors api --------------
     app.get("/api/doctors", async (req, res) => {
       try {
@@ -317,7 +364,7 @@ async function run() {
       }
     });
 
-    app.get("/api/doctors/user/:id",verifyToken, async (req, res) => {
+    app.get("/api/doctors/user/:id", verifyToken, async (req, res) => {
       try {
         const { id } = req.params;
         const query = { userId: id };
@@ -332,103 +379,116 @@ async function run() {
       }
     });
 
-    app.get("/api/doctors/appointments/today/:id", verifyToken, async (req, res) => {
-      try {
-        const { id } = req.params;
-        const today = new Date().toLocaleDateString("en-CA");
+    app.get(
+      "/api/doctors/appointments/today/:id",
+      verifyToken,
+      async (req, res) => {
+        try {
+          const { id } = req.params;
+          const today = new Date().toLocaleDateString("en-CA");
 
-        const query = { doctorId: id, appointmentDate: today };
-        const result = await appointmentCollection.find(query).toArray();
-        res.send(result);
-      } catch (err) {
-        console.error(err);
-      }
-    });
+          const query = { doctorId: id, appointmentDate: today };
+          const result = await appointmentCollection.find(query).toArray();
+          res.send(result);
+        } catch (err) {
+          console.error(err);
+        }
+      },
+    );
 
-    app.patch("/api/doctors/update_schedule/:id", verifyToken, verifyDoctor, async (req, res) => {
-      try {
-        const { id } = req.params;
-        const { availableDays, availableSlots } = req.body;
+    app.patch(
+      "/api/doctors/update_schedule/:id",
+      verifyToken,
+      verifyDoctor,
+      async (req, res) => {
+        try {
+          const { id } = req.params;
+          const { availableDays, availableSlots } = req.body;
 
-        if (!availableDays || !availableSlots) {
-          return res.status(400).json({
+          if (!availableDays || !availableSlots) {
+            return res.status(400).json({
+              success: false,
+              message: "Both availableDays and availableSlots are required.",
+            });
+          }
+
+          const formattedDays = Array.isArray(availableDays)
+            ? availableDays.join(", ")
+            : availableDays;
+
+          const query = { _id: new ObjectId(id) };
+          const updateDoc = {
+            $set: {
+              availableDays: formattedDays,
+              availableSlots: availableSlots,
+            },
+          };
+
+          const result = await doctorsCollection.updateOne(query, updateDoc);
+
+          if (result.matchedCount === 0) {
+            return res.status(404).json({
+              success: false,
+              message: "Doctor not found.",
+            });
+          }
+
+          res.status(200).json({
+            success: true,
+            message: "Schedule updated successfully.",
+          });
+        } catch (error) {
+          console.error("Error updating schedule:", error);
+          res.status(500).json({
             success: false,
-            message: "Both availableDays and availableSlots are required.",
+            message: "Internal server error.",
+            error: error.message,
           });
         }
+      },
+    );
 
-        const formattedDays = Array.isArray(availableDays)
-          ? availableDays.join(", ")
-          : availableDays;
+    app.patch(
+      "/api/admin/patients/:patientId",
+      verifyToken,
+      async (req, res) => {
+        try {
+          const { patientId } = req.params;
+          const { verificationStatus } = req.body;
 
-        const query = { _id: new ObjectId(id) };
-        const updateDoc = {
-          $set: {
-            availableDays: formattedDays,
-            availableSlots: availableSlots,
-          },
-        };
+          if (!verificationStatus) {
+            return res
+              .status(400)
+              .json({ message: "verificationStatus is required." });
+          }
 
-        const result = await doctorsCollection.updateOne(query, updateDoc);
+          if (!ObjectId.isValid(patientId)) {
+            return res.status(400).json({ message: "Invalid patientId." });
+          }
 
-        if (result.matchedCount === 0) {
-          return res.status(404).json({
-            success: false,
-            message: "Doctor not found.",
+          const result = await patientCollection.findOneAndUpdate(
+            { _id: new ObjectId(patientId) },
+            { $set: { verificationStatus } },
+            { returnDocument: "after" }, // driver v4+; use { returnOriginal: false } on older versions
+          );
+
+          // Some driver versions return the doc directly, others wrap it as { value: doc }
+          const updatedPatient = result?.value ?? result;
+
+          if (!updatedPatient) {
+            return res.status(404).json({ message: "Patient not found." });
+          }
+
+          return res.status(200).json({
+            message: "Patient status updated successfully",
+            patient: updatedPatient,
           });
+        } catch (error) {
+          console.error("Error updating status:", error);
+          return res.status(500).json({ message: "Internal server error" });
         }
-
-        res.status(200).json({
-          success: true,
-          message: "Schedule updated successfully.",
-        });
-      } catch (error) {
-        console.error("Error updating schedule:", error);
-        res.status(500).json({
-          success: false,
-          message: "Internal server error.",
-          error: error.message,
-        });
-      }
-    });
-
-    app.patch("/api/admin/patients/:patientId", verifyToken, async (req, res) => {
-      try {
-        const { patientId } = req.params;
-        const { verificationStatus } = req.body;
-
-        if (!verificationStatus) {
-          return res
-            .status(400)
-            .json({ message: "verificationStatus is required." });
-        }
-
-        if (!ObjectId.isValid(patientId)) {
-          return res.status(400).json({ message: "Invalid patientId." });
-        }
-
-        const result = await patientCollection.findOneAndUpdate(
-          { _id: new ObjectId(patientId) },
-          { $set: { verificationStatus } },
-          { returnDocument: "after" }, // driver v4+; use { returnOriginal: false } on older versions
-        );
-
-        // Some driver versions return the doc directly, others wrap it as { value: doc }
-        const updatedPatient = result?.value ?? result;
-
-        if (!updatedPatient) {
-          return res.status(404).json({ message: "Patient not found." });
-        }
-
-        return res.status(200).json({
-          message: "Patient status updated successfully",
-          patient: updatedPatient,
-        });
-      } catch (error) {
-        console.error("Error updating status:", error);
-        return res.status(500).json({ message: "Internal server error" });
-      }
-    });
+      },
+    );
 
     // ----------- patients api --------------
     app.get("/api/patients/:id", verifyToken, async (req, res) => {
@@ -515,19 +575,24 @@ async function run() {
       }
     });
 
-    app.get("/api/payments/:id", verifyToken, verifyPatient, async (req, res) => {
-      try {
-        const { id } = req.params;
-        const query = { patientId: id };
+    app.get(
+      "/api/payments/:id",
+      verifyToken,
+      verifyPatient,
+      async (req, res) => {
+        try {
+          const { id } = req.params;
+          const query = { patientId: id };
 
-        const result = await paymentCollection.find(query).toArray();
+          const result = await paymentCollection.find(query).toArray();
 
-        res.send(result);
-      } catch (err) {
-        console.error(err);
-        res.status(500).send({ massege: "failed to get payments" });
-      }
-    });
+          res.send(result);
+        } catch (err) {
+          console.error(err);
+          res.status(500).send({ massege: "failed to get payments" });
+        }
+      },
+    );
 
     // ------------- prescription api ------------
     app.post("/api/prescriptions", verifyToken, async (req, res) => {
@@ -566,46 +631,56 @@ async function run() {
       }
     });
 
-    app.get("/api/prescriptions/doctors/:id", verifyToken, verifyDoctor,  async (req, res) => {
-      try {
-        const { id } = req.params;
+    app.get(
+      "/api/prescriptions/doctors/:id",
+      verifyToken,
+      verifyDoctor,
+      async (req, res) => {
+        try {
+          const { id } = req.params;
 
-        const prescription = await prescriptionCollection
-          .find({
-            doctorId: id,
-          })
-          .toArray();
+          const prescription = await prescriptionCollection
+            .find({
+              doctorId: id,
+            })
+            .toArray();
 
-        if (!prescription) {
-          return res.status(404).send({ message: "Prescription not found" });
+          if (!prescription) {
+            return res.status(404).send({ message: "Prescription not found" });
+          }
+
+          res.send(prescription);
+        } catch (err) {
+          console.error("Error fetching prescription: ", err);
+          res.status(500).send({ message: "Failed to fetch prescription" });
         }
+      },
+    );
+    app.get(
+      "/api/prescriptions/patients/:id",
+      verifyToken,
+      verifyPatient,
+      async (req, res) => {
+        try {
+          const { id } = req.params;
 
-        res.send(prescription);
-      } catch (err) {
-        console.error("Error fetching prescription: ", err);
-        res.status(500).send({ message: "Failed to fetch prescription" });
-      }
-    });
-    app.get("/api/prescriptions/patients/:id", verifyToken, verifyPatient,  async (req, res) => {
-      try {
-        const { id } = req.params;
+          const prescription = await prescriptionCollection
+            .find({
+              doctorId: id,
+            })
+            .toArray();
 
-        const prescription = await prescriptionCollection
-          .find({
-            doctorId: id,
-          })
-          .toArray();
+          if (!prescription) {
+            return res.status(404).send({ message: "Prescription not found" });
+          }
 
-        if (!prescription) {
-          return res.status(404).send({ message: "Prescription not found" });
+          res.send(prescription);
+        } catch (err) {
+          console.error("Error fetching prescription: ", err);
+          res.status(500).send({ message: "Failed to fetch prescription" });
         }
-
-        res.send(prescription);
-      } catch (err) {
-        console.error("Error fetching prescription: ", err);
-        res.status(500).send({ message: "Failed to fetch prescription" });
-      }
-    });
+      },
+    );
 
     // ------------- review api ----------------
     app.post("/api/reviews", verifyToken, verifyPatient, async (req, res) => {
