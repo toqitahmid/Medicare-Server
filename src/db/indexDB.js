@@ -29,4 +29,4 @@ const connectDB = async () => {
 }
 
 export default connectDB;
-export const getDB = () => db;
+export const doctorCollections = () => db.collection("doctors");
