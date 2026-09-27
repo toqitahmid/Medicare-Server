@@ -1,7 +1,9 @@
 import { Router } from "express";
-import { postDoctors } from "../controllers/doctor.controller.js";
+import { getAllDoctors, getDoctorByEmail, postDoctors } from "../controllers/doctor.controller.js";
 
 const doctorRouter = Router();
-doctorRouter.route("/postDoctors").post(postDoctors)
+doctorRouter.route("/postDoctors").post(postDoctors);
+doctorRouter.route("/all").get(getAllDoctors);
+doctorRouter.route("/:doctorEmail").get(getDoctorByEmail);
 
 export default doctorRouter;

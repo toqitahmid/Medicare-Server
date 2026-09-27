@@ -30,3 +30,4 @@ const connectDB = async () => {
 
 export default connectDB;
 export const doctorCollections = () => db.collection("doctors");
+export const appointmentCollections = () => db.collection("appointments");
