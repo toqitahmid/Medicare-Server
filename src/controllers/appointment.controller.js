@@ -84,3 +84,19 @@ export const updatePaymentStatus = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, {}, "Payment status updated to Paid"));
 });
+
+export const getAppointmentByDoctorId = asyncHandler(async (req, res) => {
+    const appointments = appointmentCollections();
+    const { doctorId } = req.params;
+
+    if (!doctorId) {
+        throw new ApiError(400, "Server can't find doctor id");
+    }
+
+    const cursor = { doctorId: doctorId };
+    const result = await appointments.find(cursor).toArray();
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, { appointments: result }, "Successfully fetched appointments by Doctor Id"));
+});
