@@ -9,9 +9,10 @@ app.use(express.json());
 import userRouter from "./routes/user.route.js";
 import doctorRouter from "./routes/doctor.route.js";
 import appointmentRouter from "./routes/appointment.route.js";
+import paymentRouter from "./routes/payment.route.js";
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/doctors", doctorRouter);
 app.use("/api/v1/appointments", appointmentRouter);
-
+app.use("/api/v1/payments", paymentRouter);
 export default app;
