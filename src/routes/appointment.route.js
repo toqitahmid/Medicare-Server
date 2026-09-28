@@ -1,7 +1,10 @@
 import { Router } from "express";
 import { createAppointment, getAppointmentByPatientId, updatePaymentStatus, getAppointmentByDoctorId, updateAppointmentStatus, getAllAppointments } from "../controllers/appointment.controller.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const appointmentRouter = Router();
+appointmentRouter.use(verifyJWT);
+
 
 appointmentRouter.route("/all").get(getAllAppointments);
 appointmentRouter.route("/create").post(createAppointment);

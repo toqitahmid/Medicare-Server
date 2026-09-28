@@ -23,6 +23,7 @@
     "cors": "^2.8.6",
     "dotenv": "^18.0.3",
     "express": "^5.2.1",
+    "jose": "^6.2.12",
     "mongodb": "^7.6.0"
   },
   "devDependencies": {
