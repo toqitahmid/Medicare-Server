@@ -69,7 +69,7 @@ export const updatePaymentStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
     
     // Convert string ID to MongoDB ObjectId
-    const { ObjectId } = require('mongodb');
+    const { ObjectId } = await import('mongodb');
     
     const result = await appointments.updateOne(
         { _id: new ObjectId(id) },
