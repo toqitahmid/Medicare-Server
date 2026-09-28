@@ -12,6 +12,7 @@ import appointmentRouter from "./routes/appointment.route.js";
 import paymentRouter from "./routes/payment.route.js";
 import prescriptionRouter from "./routes/prescription.route.js";
 import reviewRouter from "./routes/review.route.js";
+import patientRouter from "./routes/patient.route.js";
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/doctors", doctorRouter);
@@ -19,4 +20,5 @@ app.use("/api/v1/appointments", appointmentRouter);
 app.use("/api/v1/payments", paymentRouter);
 app.use("/api/v1/prescriptions", prescriptionRouter);
 app.use("/api/v1/reviews", reviewRouter);
+app.use("/api/v1/patient", patientRouter);
 export default app;
