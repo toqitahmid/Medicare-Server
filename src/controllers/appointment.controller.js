@@ -124,3 +124,12 @@ export const updateAppointmentStatus = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, {}, `Appointment status updated to ${status}`));
 });
+
+export const getAllAppointments = asyncHandler(async (req, res) => {
+    const appointments = appointmentCollections();
+    const result = await appointments.find().toArray();
+    
+    return res
+        .status(200)
+        .json(new ApiResponse(200, { appointments: result }, "Fetched all appointments successfully"));
+});

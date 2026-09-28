@@ -75,3 +75,12 @@ export const getPaymentByDoctorId = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, { payments: result }, "Successfully fetched payments by Doctor Id"));
 });
+
+export const getAllPayments = asyncHandler(async (req, res) => {
+    const payments = paymentCollections();
+    const result = await payments.find().toArray();
+    
+    return res
+        .status(200)
+        .json(new ApiResponse(200, { payments: result }, "Fetched all payments successfully"));
+});

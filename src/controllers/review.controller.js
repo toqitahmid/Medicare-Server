@@ -39,3 +39,12 @@ export const createReview = asyncHandler(async (req, res) => {
         .status(201)
         .json(new ApiResponse(201, { review: result }, "Review created successfully"));
 });
+
+export const getAllReviews = asyncHandler(async (req, res) => {
+    const reviews = reviewCollections();
+    const result = await reviews.find().toArray();
+    
+    return res
+        .status(200)
+        .json(new ApiResponse(200, { reviews: result }, "Fetched all reviews successfully"));
+});
