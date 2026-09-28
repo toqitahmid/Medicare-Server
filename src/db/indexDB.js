@@ -33,3 +33,4 @@ export const doctorCollections = () => db.collection("doctors");
 export const appointmentCollections = () => db.collection("appointments");
 export const paymentCollections = () => db.collection("payments");
 export const prescriptionCollections = () => db.collection("prescriptions");
+export const reviewCollections = () => db.collection("reviews");
