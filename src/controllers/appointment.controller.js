@@ -2,6 +2,7 @@ import { appointmentCollections } from "../db/indexDB.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import { ObjectId } from "mongodb";
 
 export const createAppointment = asyncHandler(async (req, res) => {
     const appointments = appointmentCollections();
@@ -99,4 +100,27 @@ export const getAppointmentByDoctorId = asyncHandler(async (req, res) => {
     return res
         .status(200)
         .json(new ApiResponse(200, { appointments: result }, "Successfully fetched appointments by Doctor Id"));
+});
+
+export const updateAppointmentStatus = asyncHandler(async (req, res) => {
+    const appointments = appointmentCollections();
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    if (!status) {
+        throw new ApiError(400, "Please provide an appointment status");
+    }
+
+    const result = await appointments.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { appointmentStatus: status } }
+    );
+    
+    if (result.modifiedCount === 0) {
+        throw new ApiError(404, "Appointment not found or status is already set to this value");
+    }
+    
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {}, `Appointment status updated to ${status}`));
 });
