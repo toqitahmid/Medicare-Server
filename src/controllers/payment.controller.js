@@ -59,3 +59,19 @@ export const getPaymentByPatientId = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, { payments: result }, "Successfully fetched payments by Patient Id"));
 });
+
+export const getPaymentByDoctorId = asyncHandler(async (req, res) => {
+    const payments = paymentCollections();
+    const { docId } = req.params;
+
+    if (!docId) {
+        throw new ApiError(400, "Server can't find doctor id");
+    }
+
+    const cursor = { doctorId: docId };
+    const result = await payments.find(cursor).toArray();
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, { payments: result }, "Successfully fetched payments by Doctor Id"));
+});
