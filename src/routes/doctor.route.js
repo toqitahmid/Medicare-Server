@@ -4,7 +4,7 @@ import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const doctorRouter = Router();
 
-doctorRouter.route("/postDoctors").post(verifyJWT, postDoctors);
+doctorRouter.route("/postDoctors").post(postDoctors);
 doctorRouter.route("/all").get(getAllDoctors);
 doctorRouter.route("/:doctorEmail").get(getDoctorByEmail);
 
