@@ -2,7 +2,7 @@ import { jwtVerify, createRemoteJWKSet } from "jose";
 import { ApiError } from "../utils/apiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
-const jwksUrl = new URL("http://localhost:3000/api/auth/jwks");
+const jwksUrl = new URL(`${process.env.FRONTEND_URL || "http://localhost:3000"}/api/auth/jwks`);
 const JWKS = createRemoteJWKSet(jwksUrl);
 
 export const verifyJWT = asyncHandler(async (req, res, next) => {

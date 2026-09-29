@@ -25,4 +25,9 @@ app.use("/api/v1/reviews", reviewRouter);
 app.use("/api/v1/patient", patientRouter);
 app.use("/api/v1/doctor-overview", doctorOverviewRouter);
 app.use("/api/v1/admin-overview", adminOverviewRouter);
+
+app.use((err, req, res, next) => {
+    res.status(err.statusCode || 500).json({ success: false, message: err.message || "Internal Server Error", error: err });
+});
+
 export default app;
