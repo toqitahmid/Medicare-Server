@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { getAllDoctors, getDoctorByEmail, postDoctors } from "../controllers/doctor.controller.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const doctorRouter = Router();
 
